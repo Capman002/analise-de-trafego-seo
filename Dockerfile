@@ -2,7 +2,7 @@
 FROM oven/bun:1 AS frontend-builder
 WORKDIR /app
 # Copy package.json and install dependencies
-COPY frontend/package.json frontend/bun.lockb ./
+COPY frontend/package.json frontend/bun.lock ./
 RUN bun install --frozen-lockfile
 # Copy frontend source and build
 COPY frontend/ ./

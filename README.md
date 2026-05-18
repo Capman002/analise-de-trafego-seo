@@ -1,6 +1,6 @@
 # Análise de Tráfego SEO 🚀
 
-![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial-blue.svg)
+![License](https://img.shields.io/badge/License-MIT%20+%20Commons%20Clause-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go)
 ![SvelteKit](https://img.shields.io/badge/SvelteKit-2.0-FF3E00?logo=svelte)
 
@@ -83,8 +83,10 @@ go run cmd/server/main.go
 
 ## ⚖️ Licença
 
-Este projeto é disponibilizado sob a **PolyForm Noncommercial License 1.0.0**.
+Este projeto é disponibilizado sob a licença **MIT com Commons Clause (Restrição de Revenda/SaaS)**.
 
-Você tem permissão para ler, alterar, distribuir e hospedar este software livremente, **desde que seu uso seja não comercial**. É estritamente proibido vender cópias deste software, vender funcionalidades atreladas a ele ou empacotá-lo para revenda (SaaS). O código foi liberado para fins de uso interno por agências e profissionais de SEO e compartilhamento de conhecimento. 
+**O que isso significa de forma prática?**
+- ✅ **Você (ou sua Agência) PODE:** Fazer o download, instalar, modificar o código e usar a ferramenta livremente em sua operação interna para gerar relatórios e prestar consultoria de SEO para seus clientes pagantes.
+- ❌ **Você NÃO PODE:** Vender cópias deste software, vendê-lo como um produto (SaaS) ou criar plataformas *white-label* onde os clientes pagam pelo acesso direito à aplicação. O código é aberto para empoderar a comunidade técnica, mas a comercialização direta do código ou sistema é proibida.
 
-Leia o arquivo `LICENSE` para mais detalhes.
+Para mais detalhes jurídicos, consulte o arquivo `LICENSE` na raiz do projeto.

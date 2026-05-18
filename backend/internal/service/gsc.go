@@ -29,7 +29,7 @@ type gscRequest struct {
 	Dimensions            []string                  `json:"dimensions"`
 	RowLimit              int                       `json:"rowLimit"`
 	StartRow              int                       `json:"startRow"`
-	DimensionFilterGroups []gscDimensionFilterGroup  `json:"dimensionFilterGroups,omitempty"`
+	DimensionFilterGroups []gscDimensionFilterGroup `json:"dimensionFilterGroups,omitempty"`
 }
 
 type gscDimensionFilterGroup struct {

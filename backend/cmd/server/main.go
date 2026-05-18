@@ -53,6 +53,7 @@ func main() {
 	// Repositórios
 	clientRepo := repository.NewClientRepo(db)
 	trafficRepo := repository.NewTrafficRepo(db)
+	settingsRepo := repository.NewSettingsRepo(db)
 
 	// Services
 	sheetsService := service.NewSheetsService(cfg.SheetsCSVURL, clientRepo)
@@ -61,14 +62,19 @@ func main() {
 	var gscService *service.GSCService
 	var ga4Service *service.GA4Service
 
-	if cfg.GoogleCredentialsJSON != "" && cfg.GoogleTokenJSON != "" {
-		googleClient, err := auth.NewGoogleClient(cfg.GoogleCredentialsJSON, cfg.GoogleTokenJSON)
-		if err != nil {
-			slog.Warn("falha ao criar Google OAuth2 client — coleta GSC/GA4 desabilitada", "err", err)
+	if cfg.GoogleCredentialsJSON != "" {
+		tokenJSON, _ := settingsRepo.Get("google_token_json")
+		if tokenJSON != "" {
+			googleClient, err := auth.NewGoogleClient(cfg.GoogleCredentialsJSON, tokenJSON)
+			if err != nil {
+				slog.Warn("falha ao criar Google OAuth2 client — coleta GSC/GA4 desabilitada", "err", err)
+			} else {
+				gscService = service.NewGSCService(googleClient)
+				ga4Service = service.NewGA4Service(googleClient)
+				slog.Info("Google OAuth2 client inicializado — coleta GSC/GA4 ativa")
+			}
 		} else {
-			gscService = service.NewGSCService(googleClient)
-			ga4Service = service.NewGA4Service(googleClient)
-			slog.Info("Google OAuth2 client inicializado — coleta GSC/GA4 ativa")
+			slog.Warn("Google Token ausente no banco de dados. Acesse /api/auth/google/login para autenticar.")
 		}
 	}
 
@@ -102,6 +108,7 @@ func main() {
 	clientsHandler := handler.NewClientsHandler(clientRepo, trafficRepo)
 	trafficHandler := handler.NewTrafficHandler(clientRepo, trafficRepo, collector)
 	syncHandler := handler.NewSyncHandler(sheetsService)
+	authHandler := handler.NewAuthHandler(settingsRepo, cfg.GoogleCredentialsJSON)
 
 	// Router
 	r := chi.NewRouter()
@@ -113,7 +120,7 @@ func main() {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Compress(5))
 	r.Use(middleware.SecurityHeaders)
-	
+
 	// Basic Auth para proteger a aplicação inteira
 	r.Use(chimiddleware.BasicAuth("Painel Restrito", map[string]string{
 		cfg.ApiUser: cfg.ApiPass,
@@ -138,6 +145,10 @@ func main() {
 		r.Get("/clients", clientsHandler.List)
 		r.Get("/traffic/{id}", trafficHandler.GetTraffic)
 		r.Post("/sync/clients", syncHandler.SyncClients)
+
+		// Auth Routes
+		r.Get("/auth/google/login", authHandler.Login)
+		r.Get("/auth/google/callback", authHandler.Callback)
 	})
 
 	// ── Frontend SPA (embutido no binário) ─────────────────────

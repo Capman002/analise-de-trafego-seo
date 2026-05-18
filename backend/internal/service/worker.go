@@ -23,7 +23,7 @@ func NewPreWarmer(collector *Collector, clientRepo *repository.ClientRepo, traff
 	}
 }
 
-// Run inicia o loop do background worker. 
+// Run inicia o loop do background worker.
 // Primeiro realiza um povoamento inicial (se necessário), e depois agenda para rodar diariamente às 00:00.
 func (pw *PreWarmer) Run(ctx context.Context) {
 	slog.Info("[PreWarmer] Iniciando rotina de background para aquecimento de cache...")
@@ -86,7 +86,7 @@ func (pw *PreWarmer) processAllClients(ctx context.Context) {
 		}
 
 		slog.Info("[PreWarmer] Processando", "client", client.Name, "progresso", i+1, "total", len(clients))
-		
+
 		// O CollectAll ignora a coleta se a flag de cache de 6 horas for válida.
 		// Como queremos forçar a atualização às 00:00, ou buscar os 16 meses,
 		// precisamos garantir que o CollectAll execute. O HasRecentData do Collector
@@ -94,9 +94,9 @@ func (pw *PreWarmer) processAllClients(ctx context.Context) {
 		// Porém, à meia noite, os dados do dia viraram (nova data no GSC), então a UI pedirá novos dias de qualquer modo.
 		// Para o prewarmer funcionar melhor, chamamos CollectAll (ele vai respeitar o cache de 6h local se não forçarmos).
 		// Aqui nós usamos force=true para BYPASS do cache local e baixar do Google de qualquer modo.
-		
+
 		result := pw.collector.CollectAll(&client, period, true)
-		
+
 		slog.Info("[PreWarmer] Finalizado", "client", client.Name, "gsc", result.GSC, "ga4", result.GA4)
 
 		// Delay de 2 segundos entre clientes para proteger a cota da API (Rate Limiting Profile)

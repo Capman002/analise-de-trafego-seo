@@ -39,7 +39,7 @@ func Open(dbPath string) (*sql.DB, error) {
 	}
 
 	// Pool de conexões — SQLite é single-writer, mas multi-reader com WAL
-	db.SetMaxOpenConns(1)    // Evita SQLITE_BUSY em writes concorrentes
+	db.SetMaxOpenConns(1) // Evita SQLITE_BUSY em writes concorrentes
 	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(0) // Sem expiração
 

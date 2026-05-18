@@ -30,22 +30,13 @@ type googleToken struct {
 }
 
 var (
-	clientOnce sync.Once
-	cachedHTTP *http.Client
-	clientErr  error
+	clientOnce     sync.Mutex
+	cachedHTTP     *http.Client
+	globalCredJSON string
 )
 
-// NewGoogleClient cria um http.Client autenticado via OAuth2 para APIs Google.
-// Usa os JSONs de credenciais e token no formato gerado pelo OAuth2 flow.
-// O client é singleton — chamadas subsequentes retornam o mesmo client.
-func NewGoogleClient(credJSON, tokenJSON string) (*http.Client, error) {
-	clientOnce.Do(func() {
-		cachedHTTP, clientErr = buildClient(credJSON, tokenJSON)
-	})
-	return cachedHTTP, clientErr
-}
-
-func buildClient(credJSON, tokenJSON string) (*http.Client, error) {
+// GetOAuthConfig retorna a configuração OAuth2 extraída do JSON de credenciais.
+func GetOAuthConfig(credJSON string) (*oauth2.Config, error) {
 	var creds googleCreds
 	if err := json.Unmarshal([]byte(credJSON), &creds); err != nil {
 		return nil, fmt.Errorf("erro ao parsear credenciais: %w", err)
@@ -59,16 +50,7 @@ func buildClient(credJSON, tokenJSON string) (*http.Client, error) {
 		return nil, fmt.Errorf("credenciais não contêm 'installed' nem 'web'")
 	}
 
-	var tok googleToken
-	if err := json.Unmarshal([]byte(tokenJSON), &tok); err != nil {
-		return nil, fmt.Errorf("erro ao parsear token: %w", err)
-	}
-
-	if tok.RefreshToken == "" {
-		return nil, fmt.Errorf("refresh_token ausente no token JSON")
-	}
-
-	config := &oauth2.Config{
+	return &oauth2.Config{
 		ClientID:     app.ClientID,
 		ClientSecret: app.ClientSecret,
 		Endpoint:     google.Endpoint,
@@ -76,6 +58,54 @@ func buildClient(credJSON, tokenJSON string) (*http.Client, error) {
 			"https://www.googleapis.com/auth/webmasters.readonly",
 			"https://www.googleapis.com/auth/analytics.readonly",
 		},
+	}, nil
+}
+
+// NewGoogleClient cria um http.Client autenticado via OAuth2 para APIs Google.
+func NewGoogleClient(credJSON, tokenJSON string) (*http.Client, error) {
+	clientOnce.Lock()
+	defer clientOnce.Unlock()
+
+	if cachedHTTP != nil {
+		return cachedHTTP, nil
+	}
+
+	client, err := buildClient(credJSON, tokenJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	cachedHTTP = client
+	globalCredJSON = credJSON
+	return cachedHTTP, nil
+}
+
+// UpdateGoogleClient recria o client (usado após o login web).
+func UpdateGoogleClient(credJSON, tokenJSON string) (*http.Client, error) {
+	clientOnce.Lock()
+	defer clientOnce.Unlock()
+
+	client, err := buildClient(credJSON, tokenJSON)
+	if err != nil {
+		return nil, err
+	}
+	cachedHTTP = client
+	return cachedHTTP, nil
+}
+
+func buildClient(credJSON, tokenJSON string) (*http.Client, error) {
+	config, err := GetOAuthConfig(credJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	var tok googleToken
+	if err := json.Unmarshal([]byte(tokenJSON), &tok); err != nil {
+		return nil, fmt.Errorf("erro ao parsear token: %w", err)
+	}
+
+	if tok.RefreshToken == "" {
+		return nil, fmt.Errorf("refresh_token ausente no token JSON")
 	}
 
 	oauthToken := &oauth2.Token{

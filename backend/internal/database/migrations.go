@@ -6,6 +6,11 @@ import "database/sql"
 // Usa IF NOT EXISTS para ser seguro em execuções repetidas.
 func Migrate(db *sql.DB) error {
 	schema := `
+	CREATE TABLE IF NOT EXISTS system_settings (
+		key   TEXT PRIMARY KEY,
+		value TEXT NOT NULL
+	);
+
 	CREATE TABLE IF NOT EXISTS clients (
 		id          INTEGER PRIMARY KEY AUTOINCREMENT,
 		name        TEXT    NOT NULL UNIQUE,

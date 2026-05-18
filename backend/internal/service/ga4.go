@@ -36,13 +36,13 @@ type GA4Row struct {
 // ── Tipos internos da GA4 Data API ──────────────────────────────
 
 type ga4ReportRequest struct {
-	DateRanges      []ga4DateRange      `json:"dateRanges"`
-	Dimensions      []ga4Dimension      `json:"dimensions"`
-	Metrics         []ga4Metric         `json:"metrics"`
-	Limit           string              `json:"limit"`
-	Offset          string              `json:"offset"`
-	OrderBys        []ga4OrderBy        `json:"orderBys"`
-	DimensionFilter interface{}         `json:"dimensionFilter,omitempty"`
+	DateRanges      []ga4DateRange `json:"dateRanges"`
+	Dimensions      []ga4Dimension `json:"dimensions"`
+	Metrics         []ga4Metric    `json:"metrics"`
+	Limit           string         `json:"limit"`
+	Offset          string         `json:"offset"`
+	OrderBys        []ga4OrderBy   `json:"orderBys"`
+	DimensionFilter interface{}    `json:"dimensionFilter,omitempty"`
 }
 
 type ga4DateRange struct {

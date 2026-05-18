@@ -89,7 +89,6 @@ func CalculateDateRange(periodDays int, startDate, endDate string) DateRange {
 	}
 }
 
-
 // TrafficRepo gerencia operações CRUD sobre as tabelas de dados de tráfego.
 type TrafficRepo struct {
 	db *sql.DB
@@ -217,7 +216,7 @@ func (r *TrafficRepo) GetGSCData(clientID int64, dr DateRange, dimension string)
 // sortDirection deve ser "DESC" para altas e "ASC" para quedas.
 func (r *TrafficRepo) GetGSCTrending(clientID int64, dr DateRange, dimension string, sortDirection string) ([]map[string]interface{}, error) {
 	cStart, cEnd, pStart, pEnd := dr.CurrentStart, dr.CurrentEnd, dr.PrevStart, dr.PrevEnd
-	
+
 	// Previne SQL Injection no Sort
 	orderClause := "DESC"
 	if sortDirection == "ASC" {
@@ -697,4 +696,3 @@ func tableForSource(source string) string {
 		return ""
 	}
 }
-

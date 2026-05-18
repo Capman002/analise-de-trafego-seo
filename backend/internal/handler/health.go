@@ -9,7 +9,7 @@ import (
 func Health() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{
-			"status": "ok",
+			"status":  "ok",
 			"service": "analise-trafego",
 		})
 	}

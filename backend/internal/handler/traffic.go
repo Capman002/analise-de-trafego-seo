@@ -59,7 +59,7 @@ func (h *TrafficHandler) GetTraffic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ❌ Fallback de coleta removido conforme diretriz da arquitetura.
-	// O backend agora é 100% Read-Only na interação do usuário. 
+	// O backend agora é 100% Read-Only na interação do usuário.
 	// O background worker é o único responsável por injetar dados no SQLite.
 
 	// Buscar dados de cada fonte do SQLite
@@ -70,7 +70,7 @@ func (h *TrafficHandler) GetTraffic(w http.ResponseWriter, r *http.Request) {
 	gscPages, _ := h.trafficRepo.GetGSCData(clientID, dr, "page")
 	gscChart, _ := h.trafficRepo.GetGSCChartData(clientID, dr)
 	gscChartPrev, _ := h.trafficRepo.GetGSCChartDataPrev(clientID, dr)
-	
+
 	gscRiseQueries, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "query", "DESC")
 	gscRisePages, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "page", "DESC")
 	gscFallQueries, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "query", "ASC")

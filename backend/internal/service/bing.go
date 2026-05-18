@@ -39,11 +39,11 @@ type bingAPIResponse struct {
 }
 
 type bingAPIRecord struct {
-	Query                string      `json:"Query"`
-	Date                 interface{} `json:"Date"`
-	Clicks               int        `json:"Clicks"`
-	Impressions           int        `json:"Impressions"`
-	AvgImpressionPosition float64   `json:"AvgImpressionPosition"`
+	Query                 string      `json:"Query"`
+	Date                  interface{} `json:"Date"`
+	Clicks                int         `json:"Clicks"`
+	Impressions           int         `json:"Impressions"`
+	AvgImpressionPosition float64     `json:"AvgImpressionPosition"`
 }
 
 // dotNetDateRegex captura timestamps no formato /Date(1234567890)/

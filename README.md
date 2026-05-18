@@ -37,8 +37,7 @@ Copie o `.env.example` para `.env` e preencha as variáveis de acordo.
 | `API_USER` | Usuário do Basic Auth para acessar a interface e API |
 | `API_PASS` | Senha do Basic Auth para acessar a interface e API |
 | `SHEETS_CSV_URL` | URL pública da planilha do Google Sheets que contém os clientes |
-| `GOOGLE_CREDENTIALS_JSON` | JSON de credenciais do Google Cloud Console (OAuth2 Web Client) |
-| `GOOGLE_TOKEN_JSON` | JSON contendo `access_token` e `refresh_token` gerados no consentimento |
+| `GOOGLE_CREDENTIALS_JSON` | O JSON inteiro da Conta de Serviço (Service Account) gerada no Google Cloud Console |
 | `BING_API_KEY` | Chave de API do Bing Webmaster Tools |
 
 ---
@@ -57,7 +56,9 @@ A forma mais fácil de rodar o projeto em produção é através do Docker Compo
    ```bash
    docker compose up --build -d
    ```
-4. Acesse em `http://localhost:8080` (Aguarde os prompts do Basic Auth).
+4. **Acesse** em `http://localhost:8080` (Aguarde os prompts do Basic Auth).
+
+> **Aviso GSC/GA4:** Como o sistema utiliza Conta de Serviço (Service Account), não se esqueça de adicionar o e-mail gerado (ex: `bot-seo@seu-projeto.iam.gserviceaccount.com`) como "Usuário com permissão de leitura" no Google Search Console e GA4 de cada cliente.
 
 ---
 

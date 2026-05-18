@@ -61,10 +61,10 @@ func main() {
 	var gscService *service.GSCService
 	var ga4Service *service.GA4Service
 
-	if cfg.GoogleCredentialsJSON != "" && cfg.GoogleTokenJSON != "" {
-		googleClient, err := auth.NewGoogleClient(cfg.GoogleCredentialsJSON, cfg.GoogleTokenJSON)
+	if cfg.GoogleCredentialsJSON != "" {
+		googleClient, err := auth.NewGoogleClient(cfg.GoogleCredentialsJSON)
 		if err != nil {
-			slog.Warn("falha ao criar Google OAuth2 client — coleta GSC/GA4 desabilitada", "err", err)
+			slog.Warn("falha ao criar Google Service Account client — coleta GSC/GA4 desabilitada", "err", err)
 		} else {
 			gscService = service.NewGSCService(googleClient)
 			ga4Service = service.NewGA4Service(googleClient)

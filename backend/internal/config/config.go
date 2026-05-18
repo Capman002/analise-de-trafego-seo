@@ -18,9 +18,8 @@ type Config struct {
 	// Google Sheets (público — sem auth)
 	SheetsCSVURL string
 
-	// Google OAuth2 — credenciais em formato JSON
+	// Google API — credenciais em formato JSON (Service Account)
 	GoogleCredentialsJSON string
-	GoogleTokenJSON       string
 
 	// Bing Webmaster Tools
 	BingAPIKey string
@@ -46,7 +45,6 @@ func Load() (*Config, error) {
 		CORSOrigin:            getEnv("CORS_ORIGIN", "http://localhost:5173"),
 		SheetsCSVURL:          os.Getenv("SHEETS_CSV_URL"),
 		GoogleCredentialsJSON: os.Getenv("GOOGLE_CREDENTIALS_JSON"),
-		GoogleTokenJSON:       os.Getenv("GOOGLE_TOKEN_JSON"),
 		BingAPIKey:            os.Getenv("BING_API_KEY"),
 		ApiUser:               getEnv("API_USER", "admin"),
 		ApiPass:               getEnv("API_PASS", "admin"),
@@ -57,9 +55,9 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("SHEETS_CSV_URL é obrigatório — configure no .env")
 	}
 
-	if cfg.GoogleCredentialsJSON == "" || cfg.GoogleTokenJSON == "" {
+	if cfg.GoogleCredentialsJSON == "" {
 		// Warning, não fatal — permite testar sync de clientes sem credenciais Google
-		fmt.Println("[WARN] GOOGLE_CREDENTIALS_JSON ou GOOGLE_TOKEN_JSON não configurados — coleta GSC/GA4 indisponível")
+		fmt.Println("[WARN] GOOGLE_CREDENTIALS_JSON não configurado — coleta GSC/GA4 indisponível")
 	}
 
 	if cfg.BingAPIKey == "" {

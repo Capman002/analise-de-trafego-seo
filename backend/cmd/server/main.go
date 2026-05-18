@@ -53,7 +53,6 @@ func main() {
 	// Repositórios
 	clientRepo := repository.NewClientRepo(db)
 	trafficRepo := repository.NewTrafficRepo(db)
-	settingsRepo := repository.NewSettingsRepo(db)
 
 	// Services
 	sheetsService := service.NewSheetsService(cfg.SheetsCSVURL, clientRepo)
@@ -62,20 +61,17 @@ func main() {
 	var gscService *service.GSCService
 	var ga4Service *service.GA4Service
 
-	if cfg.GoogleCredentialsJSON != "" {
-		tokenJSON, _ := settingsRepo.Get("google_token_json")
-		if tokenJSON != "" {
-			googleClient, err := auth.NewGoogleClient(cfg.GoogleCredentialsJSON, tokenJSON)
-			if err != nil {
-				slog.Warn("falha ao criar Google OAuth2 client — coleta GSC/GA4 desabilitada", "err", err)
-			} else {
-				gscService = service.NewGSCService(googleClient)
-				ga4Service = service.NewGA4Service(googleClient)
-				slog.Info("Google OAuth2 client inicializado — coleta GSC/GA4 ativa")
-			}
+	if cfg.GoogleCredentialsJSON != "" && cfg.GoogleTokenJSON != "" {
+		googleClient, err := auth.NewGoogleClient(cfg.GoogleCredentialsJSON, cfg.GoogleTokenJSON)
+		if err != nil {
+			slog.Warn("falha ao criar Google OAuth2 client — coleta GSC/GA4 desabilitada", "err", err)
 		} else {
-			slog.Warn("Google Token ausente no banco de dados. Acesse /api/auth/google/login para autenticar.")
+			gscService = service.NewGSCService(googleClient)
+			ga4Service = service.NewGA4Service(googleClient)
+			slog.Info("Google OAuth2 client inicializado — coleta GSC/GA4 ativa")
 		}
+	} else if cfg.GoogleCredentialsJSON != "" {
+		slog.Warn("Google Token ausente no .env. Acesse /api/auth/google/login para gerar um novo token.")
 	}
 
 	// ── Bing Service (opcional) ─────────────────────────────────
@@ -108,7 +104,7 @@ func main() {
 	clientsHandler := handler.NewClientsHandler(clientRepo, trafficRepo)
 	trafficHandler := handler.NewTrafficHandler(clientRepo, trafficRepo, collector)
 	syncHandler := handler.NewSyncHandler(sheetsService)
-	authHandler := handler.NewAuthHandler(settingsRepo, cfg.GoogleCredentialsJSON)
+	authHandler := handler.NewAuthHandler(cfg.GoogleCredentialsJSON)
 
 	// Router
 	r := chi.NewRouter()

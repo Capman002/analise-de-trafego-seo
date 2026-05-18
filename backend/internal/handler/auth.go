@@ -7,19 +7,16 @@ import (
 	"net/http"
 
 	"github.com/wicomm/analise-trafego/internal/auth"
-	"github.com/wicomm/analise-trafego/internal/repository"
 	"golang.org/x/oauth2"
 )
 
 type AuthHandler struct {
-	settingsRepo *repository.SettingsRepo
-	credJSON     string
+	credJSON string
 }
 
-func NewAuthHandler(settingsRepo *repository.SettingsRepo, credJSON string) *AuthHandler {
+func NewAuthHandler(credJSON string) *AuthHandler {
 	return &AuthHandler{
-		settingsRepo: settingsRepo,
-		credJSON:     credJSON,
+		credJSON: credJSON,
 	}
 }
 
@@ -91,26 +88,43 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 	tokenJSON, _ := json.Marshal(tokenData)
 
-	// Salva no banco de dados
-	if err := h.settingsRepo.Set("google_token_json", string(tokenJSON)); err != nil {
-		http.Error(w, "Falha ao salvar token no banco de dados: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Tenta atualizar o Singleton HTTP Client na memória para passar a coletar dados instantaneamente
-	if _, err := auth.UpdateGoogleClient(h.credJSON, string(tokenJSON)); err != nil {
-		fmt.Printf("[ERRO] Falha ao injetar novo token em memória: %v\n", err)
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(`
+	html := fmt.Sprintf(`
 		<html>
-		<body style="font-family: sans-serif; text-align: center; padding: 50px;">
-			<h1 style="color: #4CAF50;">✅ Autenticação Concluída com Sucesso!</h1>
-			<p>O token do Google foi salvo com segurança no banco de dados.</p>
-			<p>O sistema já tem permissão para ler os dados do GSC e GA4.</p>
-			<button onclick="window.location.href='/'" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Voltar para o Dashboard</button>
+		<body style="font-family: sans-serif; text-align: center; padding: 50px; background: #f9fafb;">
+			<div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto;">
+				<h1 style="color: #10b981; margin-bottom: 20px;">✅ Autenticação Concluída com Sucesso!</h1>
+				<p style="color: #374151; font-size: 16px; margin-bottom: 30px;">
+					Copie o código abaixo e cole na aba <b>Environment Variables</b> do seu Dokploy,<br>
+					junto com as outras variáveis, e clique em <b>Deploy/Restart</b>.
+				</p>
+				
+				<div style="background: #1f2937; color: #10b981; padding: 20px; border-radius: 8px; text-align: left; overflow-x: auto; margin-bottom: 20px; position: relative;">
+					<code id="tokenCode" style="font-family: monospace; font-size: 14px; word-break: break-all;">GOOGLE_TOKEN_JSON='%s'</code>
+				</div>
+				
+				<button onclick="copyToClipboard()" id="copyBtn" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.2s;">
+					Copiar Código
+				</button>
+			</div>
+
+			<script>
+				function copyToClipboard() {
+					var code = document.getElementById("tokenCode").innerText;
+					navigator.clipboard.writeText(code).then(function() {
+						var btn = document.getElementById("copyBtn");
+						btn.innerText = "Copiado!";
+						btn.style.background = "#10b981";
+						setTimeout(function() {
+							btn.innerText = "Copiar Código";
+							btn.style.background = "#3b82f6";
+						}, 3000);
+					});
+				}
+			</script>
 		</body>
 		</html>
-	`))
+	`, string(tokenJSON))
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(html))
 }

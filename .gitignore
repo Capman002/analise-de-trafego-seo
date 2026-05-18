@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.svelte-kit/
+credentials.json
+token.json
+data/
+backend/data/
+*.db
+*.db-shm
+*.db-wal
+backend/server.exe
+backend/server
+*.exe
+.DS_Store

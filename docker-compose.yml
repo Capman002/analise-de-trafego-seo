@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  analise-trafego:
+    build: .
+    container_name: analise-trafego
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_PATH=/app/data/analise-trafego.db
+      - SYNC_ON_STARTUP=true
+      - SHEETS_CSV_URL=${SHEETS_CSV_URL:-}
+      # Aponte o JSON de credenciais diretamente aqui
+      - GOOGLE_CREDENTIALS_JSON=${GOOGLE_CREDENTIALS_JSON:-}
+      - GOOGLE_TOKEN_JSON=${GOOGLE_TOKEN_JSON:-}
+      - BING_API_KEY=${BING_API_KEY:-}
+      - GSC_PARALLEL_REQUESTS=5
+      - GSC_MAX_RETRIES=3
+      - GSC_RETRY_DELAY=5s
+      # Defina URLs permitidas via CORS em produção (separadas por vírgula)
+      # - CORS_ORIGIN=http://seu-dominio.com
+    volumes:
+      # Montamos o diretório local ./data para dentro do container em /app/data
+      # Isso garante que o banco de dados (SQLite) persista entre reboots
+      # Coloque os arquivos credentials.json e token.json dentro da pasta ./data local!
+      - ./data:/app/data

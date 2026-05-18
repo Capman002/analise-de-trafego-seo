@@ -9,7 +9,7 @@ COPY frontend/ ./
 RUN bun run build
 
 # Stage 2: Build Backend (Go)
-FROM golang:1.22-alpine AS backend-builder
+FROM golang:1.25-alpine AS backend-builder
 WORKDIR /app/backend
 
 # Install gcc and musl-dev to compile go-sqlite3 (CGO is required by modernc.org/sqlite? No, modernc/sqlite is pure Go! CGO_ENABLED=0 works!)

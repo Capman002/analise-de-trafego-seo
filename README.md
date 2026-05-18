@@ -35,9 +35,9 @@ Copie o `.env.example` para `.env` e preencha as variáveis de acordo.
 | `PORT` | Porta de acesso do servidor HTTP (Ex: `8080`) |
 | `DB_PATH` | Caminho do arquivo SQLite (Ex: `./data/analise-trafego.db`) |
 | `API_USER` | Usuário do Basic Auth para acessar a interface e API |
-| `API_PASS` | Senha do Basic Auth para acessar a interface e API |
 | `SHEETS_CSV_URL` | URL pública da planilha do Google Sheets que contém os clientes |
-| `GOOGLE_CREDENTIALS_JSON` | O JSON inteiro da Conta de Serviço (Service Account) gerada no Google Cloud Console |
+| `GOOGLE_CREDENTIALS_JSON` | JSON de credenciais do Google Cloud Console (OAuth2 Web Client) |
+| `GOOGLE_TOKEN_JSON` | JSON contendo `access_token` e `refresh_token` gerados no consentimento |
 | `BING_API_KEY` | Chave de API do Bing Webmaster Tools |
 
 ---
@@ -51,14 +51,28 @@ A forma mais fácil de rodar o projeto em produção é através do Docker Compo
    git clone https://github.com/SEU_USUARIO/analise-de-trafego-seo.git
    cd analise-de-trafego-seo
    ```
-2. Crie e configure seu arquivo `.env`.
-3. Suba o container (a persistência ocorre na pasta `/data` montada no host):
-   ```bash
-   docker compose up --build -d
-   ```
-4. **Acesse** em `http://localhost:8080` (Aguarde os prompts do Basic Auth).
+## 🔑 Como gerar os Tokens do Google (Auth Generator)
 
-> **Aviso GSC/GA4:** Como o sistema utiliza Conta de Serviço (Service Account), não se esqueça de adicionar o e-mail gerado (ex: `bot-seo@seu-projeto.iam.gserviceaccount.com`) como "Usuário com permissão de leitura" no Google Search Console e GA4 de cada cliente.
+Como este sistema não tem uma tela de login em produção para conectar o Google, você deve gerar o seu Token (Refresh Token) localmente **antes** de fazer o Deploy na nuvem. Nós fornecemos um utilitário oficial para isso.
+
+1. No Google Cloud Console, crie uma credencial do tipo **Cliente OAuth (Aplicativo da Web)**.
+2. Nas URIs de Redirecionamento Autorizadas, adicione obrigatoriamente: `http://localhost:9999/callback`
+3. Baixe o JSON da credencial e cole no seu `.env` local na variável `GOOGLE_CREDENTIALS_JSON` (em uma única linha).
+4. Abra o terminal e rode o nosso gerador:
+   ```bash
+   cd backend
+   go run cmd/auth-generator/main.go
+   ```
+5. Clique no link que aparecerá no terminal, faça login com a conta Google da sua agência e autorize.
+6. O terminal vai imprimir o seu `GOOGLE_TOKEN_JSON` definitivo. Copie e cole no seu Dokploy/Produção!
+
+---
+
+## 🚀 Deploy (Produção)
+
+1. Clone o repositório no seu servidor (Dokploy, Coolify, VPS).
+2. Preencha as Variáveis de Ambiente no painel com os JSONs que você gerou no passo anterior.
+3. Suba o container Docker apontando para a porta interna `8080`.
 
 ---
 

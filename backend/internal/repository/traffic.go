@@ -379,7 +379,7 @@ func (r *TrafficRepo) GetTrafficOverviewPrev(clientID int64, dr DateRange) (map[
 		FROM gsc_data
 		WHERE client_id = ? 
 		AND dimension = 'total'
-		AND date >= ? AND date <= ? AND date <= ?
+		AND date >= ? AND date <= ?
 	`, clientID, prevStart, prevEnd)
 
 	var gscClicks, gscImpressions int64
@@ -389,7 +389,7 @@ func (r *TrafficRepo) GetTrafficOverviewPrev(clientID int64, dr DateRange) (map[
 	ga4Row := r.db.QueryRow(`
 		SELECT COALESCE(SUM(sessions), 0), COALESCE(SUM(revenue), 0), COALESCE(SUM(items_purchased), 0)
 		FROM ga4_data
-		WHERE client_id = ? AND date >= ? AND date <= ? AND date <= ?
+		WHERE client_id = ? AND date >= ? AND date <= ?
 	`, clientID, prevStart, prevEnd)
 
 	var ga4Sessions, ga4ItemsPurchased int64
@@ -428,7 +428,7 @@ func (r *TrafficRepo) GetPositionDistribution(clientID int64, dr DateRange) (map
 				END as avg_pos
 			FROM gsc_data
 			WHERE client_id = ? AND dimension = 'query'
-			AND date >= ? AND date <= ? AND date <= ?
+			AND date >= ? AND date <= ?
 			GROUP BY key
 		)
 	`, clientID, cStart, cEnd)
@@ -451,7 +451,7 @@ func (r *TrafficRepo) GetPositionDistribution(clientID int64, dr DateRange) (map
 				END as avg_pos
 			FROM gsc_data
 			WHERE client_id = ? AND dimension = 'query'
-			AND date >= ? AND date <= ? AND date <= ?
+			AND date >= ? AND date <= ?
 			GROUP BY key
 		)
 	`, clientID, pStart, pEnd)

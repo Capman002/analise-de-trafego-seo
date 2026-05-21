@@ -44,8 +44,36 @@
   let posDist = $derived(trafficData?.position_distribution);
 
   let topPages = $derived([...gscPages].sort((a: any, b: any) => b.clicks - a.clicks).slice(0, 100));
-  let oppTop5 = $derived(gscQueries.filter((q: any) => q.position > 5 && q.position <= 10).sort((a: any, b: any) => b.impressions - a.impressions).slice(0, 100));
-  let oppPage1 = $derived(gscQueries.filter((q: any) => q.position > 10 && q.position <= 20).sort((a: any, b: any) => b.impressions - a.impressions).slice(0, 100));
+  let oppTop5 = $derived.by(() => {
+    return gscQueries.filter((q: any) => {
+      const pos = q.position;
+      const prevPos = q.prev_position;
+      if (pos > 0 && pos > 5 && pos <= 10) return true;
+      if (comparing && (!pos || pos <= 0) && prevPos > 0 && prevPos > 5 && prevPos <= 10) return true;
+      return false;
+    })
+    .sort((a: any, b: any) => {
+      const aVal = a.impressions || a.prev_impressions || 0;
+      const bVal = b.impressions || b.prev_impressions || 0;
+      return bVal - aVal;
+    })
+    .slice(0, 100);
+  });
+  let oppPage1 = $derived.by(() => {
+    return gscQueries.filter((q: any) => {
+      const pos = q.position;
+      const prevPos = q.prev_position;
+      if (pos > 0 && pos > 10 && pos <= 20) return true;
+      if (comparing && (!pos || pos <= 0) && prevPos > 0 && prevPos > 10 && prevPos <= 20) return true;
+      return false;
+    })
+    .sort((a: any, b: any) => {
+      const aVal = a.impressions || a.prev_impressions || 0;
+      const bVal = b.impressions || b.prev_impressions || 0;
+      return bVal - aVal;
+    })
+    .slice(0, 100);
+  });
 
   let riseQueries = $derived(trafficData?.gsc_rise_queries || []);
   let risePages = $derived(trafficData?.gsc_rise_pages || []);

@@ -178,7 +178,16 @@ func (r *TrafficRepo) GetGSCData(clientID int64, dr DateRange, dimension string)
 	cStart, cEnd, pStart, pEnd := dr.CurrentStart, dr.CurrentEnd, dr.PrevStart, dr.PrevEnd
 
 	return r.queryTrafficData(`
-		WITH current_period AS (
+		SELECT 
+			k.key,
+			c.clicks, c.impressions, c.ctr, c.position,
+			p.prev_clicks, p.prev_impressions, p.prev_ctr, p.prev_position
+		FROM (
+			SELECT key FROM gsc_data
+			WHERE client_id = ? AND dimension = ? AND ((date >= ? AND date <= ?) OR (date >= ? AND date <= ?))
+			GROUP BY key
+		) k
+		LEFT JOIN (
 			SELECT 
 				key,
 				SUM(clicks) as clicks,
@@ -188,8 +197,8 @@ func (r *TrafficRepo) GetGSCData(clientID int64, dr DateRange, dimension string)
 			FROM gsc_data
 			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
 			GROUP BY key
-		),
-		previous_period AS (
+		) c ON k.key = c.key
+		LEFT JOIN (
 			SELECT 
 				key,
 				SUM(clicks) as prev_clicks,
@@ -199,22 +208,10 @@ func (r *TrafficRepo) GetGSCData(clientID int64, dr DateRange, dimension string)
 			FROM gsc_data
 			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
 			GROUP BY key
-		),
-		all_keys AS (
-			SELECT key FROM current_period
-			UNION
-			SELECT key FROM previous_period
-		)
-		SELECT 
-			k.key,
-			c.clicks, c.impressions, c.ctr, c.position,
-			p.prev_clicks, p.prev_impressions, p.prev_ctr, p.prev_position
-		FROM all_keys k
-		LEFT JOIN current_period c ON k.key = c.key
-		LEFT JOIN previous_period p ON k.key = p.key
+		) p ON k.key = p.key
 		ORDER BY COALESCE(c.clicks, 0) DESC, COALESCE(p.prev_clicks, 0) DESC
 		LIMIT 200
-	`, clientID, dimension, cStart, cEnd, clientID, dimension, pStart, pEnd)
+	`, clientID, dimension, cStart, cEnd, pStart, pEnd, clientID, dimension, cStart, cEnd, clientID, dimension, pStart, pEnd)
 }
 
 // GetGSCTrending retorna a variação de cliques (maiores altas ou maiores quedas)
@@ -230,38 +227,35 @@ func (r *TrafficRepo) GetGSCTrending(clientID int64, dr DateRange, dimension str
 	}
 
 	query := fmt.Sprintf(`
-		WITH current_period AS (
-			SELECT key, SUM(clicks) as clicks, SUM(impressions) as impressions
-			FROM gsc_data
-			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
-			GROUP BY key
-		),
-		previous_period AS (
-			SELECT key, SUM(clicks) as prev_clicks, SUM(impressions) as prev_impressions
-			FROM gsc_data
-			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
-			GROUP BY key
-		),
-		all_keys AS (
-			SELECT key FROM current_period
-			UNION
-			SELECT key FROM previous_period
-		)
 		SELECT 
 			k.key, 
 			COALESCE(c.clicks, 0) as clicks, 
 			COALESCE(c.impressions, 0) as impressions, 
 			COALESCE(p.prev_clicks, 0) as prev_clicks,
 			(COALESCE(c.clicks, 0) - COALESCE(p.prev_clicks, 0)) as clicks_diff
-		FROM all_keys k
-		LEFT JOIN current_period c ON k.key = c.key
-		LEFT JOIN previous_period p ON k.key = p.key
+		FROM (
+			SELECT key FROM gsc_data
+			WHERE client_id = ? AND dimension = ? AND ((date >= ? AND date <= ?) OR (date >= ? AND date <= ?))
+			GROUP BY key
+		) k
+		LEFT JOIN (
+			SELECT key, SUM(clicks) as clicks, SUM(impressions) as impressions
+			FROM gsc_data
+			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
+			GROUP BY key
+		) c ON k.key = c.key
+		LEFT JOIN (
+			SELECT key, SUM(clicks) as prev_clicks, SUM(impressions) as prev_impressions
+			FROM gsc_data
+			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
+			GROUP BY key
+		) p ON k.key = p.key
 		WHERE (COALESCE(c.clicks, 0) - COALESCE(p.prev_clicks, 0)) != 0
 		ORDER BY clicks_diff %s, COALESCE(c.clicks, 0) DESC
 		LIMIT 100
 	`, orderClause)
 
-	return r.queryTrafficData(query, clientID, dimension, cStart, cEnd, clientID, dimension, pStart, pEnd)
+	return r.queryTrafficData(query, clientID, dimension, cStart, cEnd, pStart, pEnd, clientID, dimension, cStart, cEnd, clientID, dimension, pStart, pEnd)
 }
 
 // GetGSCChartData retorna a soma de cliques e impressões por dia para o gráfico.

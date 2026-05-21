@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -63,24 +64,66 @@ func (h *TrafficHandler) GetTraffic(w http.ResponseWriter, r *http.Request) {
 	// O background worker é o único responsável por injetar dados no SQLite.
 
 	// Buscar dados de cada fonte do SQLite
-	overview, _ := h.trafficRepo.GetTrafficOverview(clientID, dr)
-	overviewPrev, _ := h.trafficRepo.GetTrafficOverviewPrev(clientID, dr)
-	posDistribution, _ := h.trafficRepo.GetPositionDistribution(clientID, dr)
-	gscQueries, _ := h.trafficRepo.GetGSCData(clientID, dr, "query")
-	gscPages, _ := h.trafficRepo.GetGSCData(clientID, dr, "page")
-	gscChart, _ := h.trafficRepo.GetGSCChartData(clientID, dr)
-	gscChartPrev, _ := h.trafficRepo.GetGSCChartDataPrev(clientID, dr)
+	overview, err := h.trafficRepo.GetTrafficOverview(clientID, dr)
+	if err != nil {
+		slog.Error("GetTrafficOverview failed", "client_id", clientID, "err", err)
+	}
+	overviewPrev, err := h.trafficRepo.GetTrafficOverviewPrev(clientID, dr)
+	if err != nil {
+		slog.Error("GetTrafficOverviewPrev failed", "client_id", clientID, "err", err)
+	}
+	posDistribution, err := h.trafficRepo.GetPositionDistribution(clientID, dr)
+	if err != nil {
+		slog.Error("GetPositionDistribution failed", "client_id", clientID, "err", err)
+	}
+	gscQueries, err := h.trafficRepo.GetGSCData(clientID, dr, "query")
+	if err != nil {
+		slog.Error("GetGSCData (query) failed", "client_id", clientID, "err", err)
+	}
+	gscPages, err := h.trafficRepo.GetGSCData(clientID, dr, "page")
+	if err != nil {
+		slog.Error("GetGSCData (page) failed", "client_id", clientID, "err", err)
+	}
+	gscChart, err := h.trafficRepo.GetGSCChartData(clientID, dr)
+	if err != nil {
+		slog.Error("GetGSCChartData failed", "client_id", clientID, "err", err)
+	}
+	gscChartPrev, err := h.trafficRepo.GetGSCChartDataPrev(clientID, dr)
+	if err != nil {
+		slog.Error("GetGSCChartDataPrev failed", "client_id", clientID, "err", err)
+	}
 
-	gscRiseQueries, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "query", "DESC")
-	gscRisePages, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "page", "DESC")
-	gscFallQueries, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "query", "ASC")
-	gscFallPages, _ := h.trafficRepo.GetGSCTrending(clientID, dr, "page", "ASC")
+	gscRiseQueries, err := h.trafficRepo.GetGSCTrending(clientID, dr, "query", "DESC")
+	if err != nil {
+		slog.Error("GetGSCTrending (query, DESC) failed", "client_id", clientID, "err", err)
+	}
+	gscRisePages, err := h.trafficRepo.GetGSCTrending(clientID, dr, "page", "DESC")
+	if err != nil {
+		slog.Error("GetGSCTrending (page, DESC) failed", "client_id", clientID, "err", err)
+	}
+	gscFallQueries, err := h.trafficRepo.GetGSCTrending(clientID, dr, "query", "ASC")
+	if err != nil {
+		slog.Error("GetGSCTrending (query, ASC) failed", "client_id", clientID, "err", err)
+	}
+	gscFallPages, err := h.trafficRepo.GetGSCTrending(clientID, dr, "page", "ASC")
+	if err != nil {
+		slog.Error("GetGSCTrending (page, ASC) failed", "client_id", clientID, "err", err)
+	}
 
-	ga4Data, _ := h.trafficRepo.GetGA4Data(clientID, dr)
-	bingData, _ := h.trafficRepo.GetBingData(clientID, dr)
+	ga4Data, err := h.trafficRepo.GetGA4Data(clientID, dr)
+	if err != nil {
+		slog.Error("GetGA4Data failed", "client_id", clientID, "err", err)
+	}
+	bingData, err := h.trafficRepo.GetBingData(clientID, dr)
+	if err != nil {
+		slog.Error("GetBingData failed", "client_id", clientID, "err", err)
+	}
 
 	// Status de sincronização gravado pelo Worker
-	syncStatus, _ := h.trafficRepo.GetSyncStatus(clientID)
+	syncStatus, err := h.trafficRepo.GetSyncStatus(clientID)
+	if err != nil {
+		slog.Error("GetSyncStatus failed", "client_id", clientID, "err", err)
+	}
 
 	// Garantir arrays vazios em vez de null
 	if gscQueries == nil {

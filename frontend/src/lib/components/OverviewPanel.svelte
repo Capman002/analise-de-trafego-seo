@@ -61,10 +61,11 @@
   let hasGa4 = $derived(ga4Items.length > 0);
 
   // Deltas (só calculados quando comparing é true)
-  function calcDelta(current: number, prev: number | null | undefined): number | null {
+  function calcDelta(current: number | null | undefined, prev: number | null | undefined): number | null {
     if (!comparing || prev == null) return null;
-    if (prev === 0) return current > 0 ? 100 : 0;
-    return ((current - prev) / Math.abs(prev)) * 100;
+    const cur = current || 0;
+    if (prev === 0) return cur > 0 ? 100 : 0;
+    return ((cur - prev) / Math.abs(prev)) * 100;
   }
 
   let dClicks = $derived(calcDelta(overview?.gsc_clicks || 0, overviewPrev?.gsc_clicks || 0));
@@ -85,9 +86,25 @@
 
   // Drill-down: queries filtradas por faixa
   function queriesByRange(min: number, max: number): any[] {
-    return gscQueries.filter((q: any) => q.position >= min && q.position < max)
-      .sort((a: any, b: any) => b.impressions - a.impressions)
-      .slice(0, 100);
+    return gscQueries.filter((q: any) => {
+      const pos = q.position;
+      const prevPos = q.prev_position;
+      
+      // Se existe posição atual e ela cai na faixa
+      if (pos > 0 && pos >= min && pos < max) return true;
+      
+      // Se não existe posição atual (ou seja, 0 / null / undefined) e estamos comparando,
+      // e a posição anterior cai na faixa
+      if (comparing && (!pos || pos <= 0) && prevPos > 0 && prevPos >= min && prevPos < max) return true;
+      
+      return false;
+    })
+    .sort((a: any, b: any) => {
+      const aVal = a.impressions || a.prev_impressions || 0;
+      const bVal = b.impressions || b.prev_impressions || 0;
+      return bVal - aVal;
+    })
+    .slice(0, 100);
   }
 
   let posTop3Queries = $derived(queriesByRange(0, 3.5));
@@ -213,7 +230,7 @@
             { label: 'Cliques', value: fmt(page.clicks || 0), highlight: sortKey === 'clicks', delta: calcDelta(page.clicks, page.prev_clicks), prevValue: fmt(page.prev_clicks || 0) },
             { label: 'Impressões', value: fmt(page.impressions || 0), highlight: sortKey === 'impressions', delta: calcDelta(page.impressions, page.prev_impressions), prevValue: fmt(page.prev_impressions || 0) },
             { label: 'CTR', value: fmtPct(page.ctr || 0), highlight: sortKey === 'ctr', delta: calcDelta(page.ctr, page.prev_ctr), prevValue: fmtPct(page.prev_ctr || 0) },
-            { label: 'Posição', value: (page.position || 0).toFixed(1), highlight: sortKey === 'position', delta: calcDelta(page.position, page.prev_position), deltaInverted: true, prevValue: (page.prev_position || 0).toFixed(1) },
+            { label: 'Posição', value: page.position ? page.position.toFixed(1) : '-', highlight: sortKey === 'position', delta: calcDelta(page.position, page.prev_position), deltaInverted: true, prevValue: page.prev_position ? page.prev_position.toFixed(1) : '-' },
           ]} />
         {/snippet}
       </ModalList>
@@ -222,11 +239,11 @@
     <Modal open={openSection === 'oppTop5'} title="Oportunidade para Top 5" subtitle={`Consultas nas posições 6-10 com alto potencial ${timeText}`} color="#3b82f6" onclose={() => openSection = null}>
       <ModalList items={oppTop5} sortOptions={SORT_GSC} defaultSort="impressions" emptyMessage="Nenhuma oportunidade nesta faixa.">
         {#snippet renderItem(q: any, i: number, sortKey: string)}
-          <ListItem hideLabels={true} rank={i + 1} primary={q.key} secondary={'Posição média: ' + (q.position || 0).toFixed(1)} trend="up" metrics={[
+          <ListItem hideLabels={true} rank={i + 1} primary={q.key} secondary={'Posição média: ' + (q.position ? q.position.toFixed(1) : '-')} trend="up" metrics={[
             { label: 'Cliques', value: fmt(q.clicks || 0), highlight: sortKey === 'clicks', delta: calcDelta(q.clicks, q.prev_clicks), prevValue: fmt(q.prev_clicks || 0) },
             { label: 'Impressões', value: fmt(q.impressions || 0), highlight: sortKey === 'impressions', delta: calcDelta(q.impressions, q.prev_impressions), prevValue: fmt(q.impressions || 0) },
             { label: 'CTR', value: fmtPct(q.ctr || 0), highlight: sortKey === 'ctr', delta: calcDelta(q.ctr, q.prev_ctr), prevValue: fmtPct(q.prev_ctr || 0) },
-            { label: 'Posição', value: (q.position || 0).toFixed(1), highlight: sortKey === 'position', delta: calcDelta(q.position, q.prev_position), deltaInverted: true, prevValue: (q.prev_position || 0).toFixed(1) },
+            { label: 'Posição', value: q.position ? q.position.toFixed(1) : '-', highlight: sortKey === 'position', delta: calcDelta(q.position, q.prev_position), deltaInverted: true, prevValue: q.prev_position ? q.prev_position.toFixed(1) : '-' },
           ]} />
         {/snippet}
       </ModalList>
@@ -235,11 +252,11 @@
     <Modal open={openSection === 'oppPage1'} title="Oportunidade para 1ª Página" subtitle={`Consultas nas posições 11-20 ${timeText}`} color="#8b5cf6" onclose={() => openSection = null}>
       <ModalList items={oppPage1} sortOptions={SORT_GSC} defaultSort="impressions" emptyMessage="Nenhuma oportunidade nesta faixa.">
         {#snippet renderItem(q: any, i: number, sortKey: string)}
-          <ListItem hideLabels={true} rank={i + 1} primary={q.key} secondary={'Posição média: ' + (q.position || 0).toFixed(1)} trend="up" metrics={[
+          <ListItem hideLabels={true} rank={i + 1} primary={q.key} secondary={'Posição média: ' + (q.position ? q.position.toFixed(1) : '-')} trend="up" metrics={[
             { label: 'Cliques', value: fmt(q.clicks || 0), highlight: sortKey === 'clicks', delta: calcDelta(q.clicks, q.prev_clicks), prevValue: fmt(q.prev_clicks || 0) },
             { label: 'Impressões', value: fmt(q.impressions || 0), highlight: sortKey === 'impressions', delta: calcDelta(q.impressions, q.prev_impressions), prevValue: fmt(q.prev_impressions || 0) },
             { label: 'CTR', value: fmtPct(q.ctr || 0), highlight: sortKey === 'ctr', delta: calcDelta(q.ctr, q.prev_ctr), prevValue: fmtPct(q.prev_ctr || 0) },
-            { label: 'Posição', value: (q.position || 0).toFixed(1), highlight: sortKey === 'position', delta: calcDelta(q.position, q.prev_position), deltaInverted: true, prevValue: (q.prev_position || 0).toFixed(1) },
+            { label: 'Posição', value: q.position ? q.position.toFixed(1) : '-', highlight: sortKey === 'position', delta: calcDelta(q.position, q.prev_position), deltaInverted: true, prevValue: q.prev_position ? q.prev_position.toFixed(1) : '-' },
           ]} />
         {/snippet}
       </ModalList>
@@ -307,11 +324,11 @@
       <Modal open={openSection === modal.id} title={modal.title} subtitle={modal.subtitle} color={modal.color} onclose={() => openSection = null}>
         <ModalList items={modal.items} sortOptions={SORT_GSC} defaultSort="impressions" emptyMessage="Nenhuma query nesta faixa.">
           {#snippet renderItem(q: any, i: number, sortKey: string)}
-            <ListItem hideLabels={true} rank={i + 1} primary={q.key} secondary={'Posição: ' + (q.position || 0).toFixed(1)} trend="up" metrics={[
+            <ListItem hideLabels={true} rank={i + 1} primary={q.key} secondary={'Posição: ' + (q.position ? q.position.toFixed(1) : '-')} trend="up" metrics={[
               { label: 'Cliques', value: fmt(q.clicks || 0), highlight: sortKey === 'clicks', delta: calcDelta(q.clicks, q.prev_clicks), prevValue: fmt(q.prev_clicks || 0) },
               { label: 'Impressões', value: fmt(q.impressions || 0), highlight: sortKey === 'impressions', delta: calcDelta(q.impressions, q.prev_impressions), prevValue: fmt(q.prev_impressions || 0) },
               { label: 'CTR', value: fmtPct(q.ctr || 0), highlight: sortKey === 'ctr', delta: calcDelta(q.ctr, q.prev_ctr), prevValue: fmtPct(q.prev_ctr || 0) },
-              { label: 'Posição', value: (q.position || 0).toFixed(1), highlight: sortKey === 'position', delta: calcDelta(q.position, q.prev_position), deltaInverted: true, prevValue: (q.prev_position || 0).toFixed(1) },
+              { label: 'Posição', value: q.position ? q.position.toFixed(1) : '-', highlight: sortKey === 'position', delta: calcDelta(q.position, q.prev_position), deltaInverted: true, prevValue: q.prev_position ? q.prev_position.toFixed(1) : '-' },
             ]} />
           {/snippet}
         </ModalList>

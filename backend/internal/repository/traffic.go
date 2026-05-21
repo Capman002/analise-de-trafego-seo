@@ -199,14 +199,20 @@ func (r *TrafficRepo) GetGSCData(clientID int64, dr DateRange, dimension string)
 			FROM gsc_data
 			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
 			GROUP BY key
+		),
+		all_keys AS (
+			SELECT key FROM current_period
+			UNION
+			SELECT key FROM previous_period
 		)
 		SELECT 
-			c.key,
+			k.key,
 			c.clicks, c.impressions, c.ctr, c.position,
 			p.prev_clicks, p.prev_impressions, p.prev_ctr, p.prev_position
-		FROM current_period c
-		LEFT JOIN previous_period p ON c.key = p.key
-		ORDER BY c.clicks DESC
+		FROM all_keys k
+		LEFT JOIN current_period c ON k.key = c.key
+		LEFT JOIN previous_period p ON k.key = p.key
+		ORDER BY COALESCE(c.clicks, 0) DESC, COALESCE(p.prev_clicks, 0) DESC
 		LIMIT 200
 	`, clientID, dimension, cStart, cEnd, clientID, dimension, pStart, pEnd)
 }
@@ -235,17 +241,23 @@ func (r *TrafficRepo) GetGSCTrending(clientID int64, dr DateRange, dimension str
 			FROM gsc_data
 			WHERE client_id = ? AND dimension = ? AND date >= ? AND date <= ?
 			GROUP BY key
+		),
+		all_keys AS (
+			SELECT key FROM current_period
+			UNION
+			SELECT key FROM previous_period
 		)
 		SELECT 
-			c.key, 
-			c.clicks, 
-			c.impressions, 
+			k.key, 
+			COALESCE(c.clicks, 0) as clicks, 
+			COALESCE(c.impressions, 0) as impressions, 
 			COALESCE(p.prev_clicks, 0) as prev_clicks,
-			(c.clicks - COALESCE(p.prev_clicks, 0)) as clicks_diff
-		FROM current_period c
-		LEFT JOIN previous_period p ON c.key = p.key
-		WHERE (c.clicks - COALESCE(p.prev_clicks, 0)) != 0
-		ORDER BY clicks_diff %s, c.clicks DESC
+			(COALESCE(c.clicks, 0) - COALESCE(p.prev_clicks, 0)) as clicks_diff
+		FROM all_keys k
+		LEFT JOIN current_period c ON k.key = c.key
+		LEFT JOIN previous_period p ON k.key = p.key
+		WHERE (COALESCE(c.clicks, 0) - COALESCE(p.prev_clicks, 0)) != 0
+		ORDER BY clicks_diff %s, COALESCE(c.clicks, 0) DESC
 		LIMIT 100
 	`, orderClause)
 
